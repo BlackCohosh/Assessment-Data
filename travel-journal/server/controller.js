@@ -1,16 +1,16 @@
 require('dotenv').config();
-const Sequelize = require('sequelize')
+const Sequelize = require('sequelize');
 
 const { CONNECTION_STRING } = process.env;
 
 const sequelize = new Sequelize(CONNECTION_STRING, {
-    dialect: 'postgres',
+    dialect: 'postgres', 
     dialectOptions: {
         ssl: {
             rejectUnauthorized: false
         }
     }
-  })
+})
 
 module.exports = {
     seed: (req, res) => {
@@ -29,6 +29,11 @@ module.exports = {
                 rating INTEGER,
                 country_id INTEGER REFERENCES countries(country_id)
             );
+
+            INSERT INTO cities (name)
+            VALUES ('Austin'),
+            ('Portland'),
+            ('San Francisco');
 
             insert into countries (name)
             values ('Afghanistan'),
@@ -236,5 +241,34 @@ module.exports = {
             `SELECT * FROM countries;`
         ).then(dbRes => res.status(200).send(dbRes[0])
         ).catch(err => console.log('error getting countries', err))
+    },
+    createCity: (req, res) => {
+        const {name, rating, countryId} = req.body;
+        sequelize.query(
+            `INSERT INTO cities (name, rating, country_id)
+            VALUES ('${name}', '${rating}', '${countryId}');`
+        )
+        .then(dbRes => res.status(200).send(dbRes[0]))
+        .catch(err => console.log('error creating city', err));
+    
+    },
+    getCities: (req, res) => {
+        sequelize.query(
+            `SELECT city.city_id, city.name AS city, city.rating, country.country_id, country.name AS country
+            FROM cities city
+            JOIN countries country
+            ON city.country_id = country.country_id
+            ORDER BY city.rating;`
+        )
+        .then(dbRes => res.status(200).send(dbRes[0]))
+        .catch(err => console.log('error getting cities', err));
+    },
+    deleteCity: (req, res) => {
+        const cityId = req.params.id;
+        sequelize.query(
+            `DELETE FROM cities where city_id = ${cityId};`
+        )
+        .then(dbRes => res.status(200).send(dbRes[0]))
+        .catch(err => console.log('error deleting city', err));
     }
 }
